@@ -9,6 +9,8 @@ let colors = {
     "G":150,
     "R":0,
     "P":290
+    // "P":167
+    // "P":60
 }
 
 // Get player name + turn number
@@ -51,7 +53,7 @@ function getData(){
     )
 }
 
-function getCardHTML(card, clickable){
+function getCardHTML(card){
     // Returns HTML of given card
     // card (str): card to display
     // clickable (bool): whether card is playable (adds onclick part, and influences)
@@ -60,9 +62,7 @@ function getCardHTML(card, clickable){
     let hue = colors[parts[0]];
     let symbol = parts[1];
     
-    let onclick;
-    if (clickable) onclick = `onmousedown="playCard('${card}')"`;
-    else onclick = "";
+    let onclick = `onmousedown="playCard('${card}')"`;
 
     let img_src = "card.png";
 
@@ -70,19 +70,9 @@ function getCardHTML(card, clickable){
         symbol = "";
         img_src = "cancel.png";
     }
-    if (symbol == "REVERSE"){
-        symbol = "";
-        img_src = "reverse.png";
-    }
-    if (symbol == "PLUS"){
-        symbol = "";
-        img_src = "plus.png";
-    }
+
     if (symbol == "WILD"){
-        if (clickable){
-            return `<div class=card onmousedown="showColorSelection()"><img src=assets/wild.png></div>`;
-        }
-        return `<div class=card style="filter:hue-rotate(${hue}deg);"><img src=assets/wild2.png></div>`;
+        return `<div class=card ${onclick}><img src=assets/wild.png></div>`;
     }
     return `<div class=card style="filter:hue-rotate(${hue}deg);" ${onclick}><img src=assets/${img_src}><p>${symbol}</p></div>`;
 }
@@ -92,7 +82,8 @@ function setCards(cards){
     $("#card-grid").html("");
     // Add each card
     for (let card of cards){
-        $("#card-grid").append(getCardHTML(card, true));
+        $("#card-grid").append(card);
+        // $("#card-grid").append(getCardHTML(card));
     }
 }
 
@@ -101,8 +92,8 @@ function setStandings(standings){
     $("#standings").html("");
     for (let i=0; i<standings.length; i++){
         player = standings[i];
-        //if (i == turn) $("#standings").append(`<tr style="background-color:#f7913e;"><td><b>${player[0]}</b></td><td><b>${player[1]}</b></td>`);
-        //else $("#standings").append(`<tr><td>${player[0]}</td><td>${player[1]}</td>`);
+        // if (i == turn) $("#standings").append(`<tr style="background-color:#f7913e;"><td><b>${player[0]}</b></td><td><b>${player[1]}</b></td>`);
+        // else $("#standings").append(`<tr><td>${player[0]}</td><td>${player[1]}</td>`);
 
         let div_html = "<div class=player-info>";
         if (i == turn){
@@ -134,7 +125,8 @@ function setStandings(standings){
 
 function setTopcard(card){
     // Display current top card
-    document.getElementById("top-card").innerHTML = getCardHTML(card, false);
+    document.getElementById("top-card").innerHTML = card;
+    // document.getElementById("top-card").innerHTML = getCardHTML(card);
 }
 
 function setPlayerTurnDisplay(){
@@ -152,18 +144,6 @@ function setPlayerTurnDisplay(){
 
 dataInterval = setInterval(getData,500);
 getData();
-
-// Show color selection box
-function showColorSelection(){
-    if (game_over){
-        return "game over";
-    }
-    // Check if turn is correct
-    if (turn != player_turn){
-        return "not player turn";
-    }
-    $("#color-selection").css("display", "block");
-}
 
 // Send move requests
 
