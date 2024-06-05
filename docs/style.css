@@ -10,11 +10,11 @@ body{
 }
 
 #container{
-    margin-left:20%;
-    margin-right:20%;
+    margin-left:10%;
+    margin-right:10%;
 }
 
-#play-container{
+#round-container{
     margin-left:5%;
     margin-right:5%;
 }
@@ -24,7 +24,7 @@ body{
         margin-left:10px;
         margin-right:10px;
     }
-    #play-container{
+    #round-container{
         margin-left:10px;
         margin-right:10px;
     }
@@ -32,13 +32,24 @@ body{
 
 #div-wrapper{
     display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(400px,1fr));
+    grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+    /* grid-template-columns: repeat(auto-fit,minmax(400px,1fr)); */
 }
 
 #div-grid{
     display: grid;
     grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
 }
+
+#join-link-div {
+    cursor: pointer;
+    display: inline;
+}
+
+/* #play-container{
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
+} */
 
 /* TEXT */
 
@@ -88,18 +99,6 @@ td{
     border: 4px solid black;
 }
 
-#card-grid{
-    display:grid;
-    grid-template-columns: repeat(auto-fill,minmax(140px,0.7fr));
-    gap:10px;
-}
-
-#color-card-grid{
-    display:grid;
-    grid-template-columns: repeat(4,minmax(10px,160px));
-    gap:10px;
-}
-
 button{
     background-color: rgb(249, 214, 56);
     border-radius:10px;
@@ -137,7 +136,7 @@ input{
 
 /* CARDS */
 .card{
-    width:100%;
+    width:10%;
     position:relative;
     border-radius:25%;
     top:-5px;
@@ -155,7 +154,7 @@ input{
 }
 
 #card-piles .card{
-    width: max(20%,160px);
+    width: 15%;
     display:inline-block;
     margin:10px;
 }
@@ -164,6 +163,11 @@ input{
     top:0px;
     left:0px;
 }
+
+.hand-card:focus img{
+    filter:drop-shadow(5px 5px 0px rgb(236, 232, 27));
+}
+
 .card img{
     width:100%;
     filter:drop-shadow(5px 5px 0px rgba(29, 29, 29, 0.562));
@@ -186,6 +190,92 @@ input{
     user-select: none;
 }
 
+/* Phase Piles */
+#phase-grid {
+    gap:10px;
+}
+
+.pile-grid{
+    display:grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+}
+.pile-name{
+    top:-5px;
+    left:-5px;
+    cursor:pointer;
+    margin-top:0px;
+    margin-bottom: 2px;
+}
+
+.pile-name:hover{
+    top:0px;
+    left:0px;
+}
+
+.phase-pile {
+    border-radius:10px;
+    padding:10px;
+    margin:5px;
+    position:relative;
+    border: 4px solid black;
+    display:grid;
+}
+
+.pile-cards-div{
+    display: inline-flex;
+    overflow-x: hidden;
+}
+
+.pile-card-div{
+    width:10%;
+}
+
+.pile-card{
+    width:200%;
+}
+
+/* Hand */
+
+#card-grid{
+    text-align:center;
+    /* display:inline-block; */
+    /* width : 100%; */
+}
+
+/* #card-grid{
+    display : inline-flex;
+    overflow-x: hidden;
+} */
+
+
+#card-grid .hand-card{
+    width: 8%;
+    margin:2px;
+    display: inline;
+}
+
+.hand-card:hover img{
+    top:0px;
+    left:0px;
+    filter:none;
+}
+
+.hand-card img {
+    width : inherit;
+    position:relative;
+    top:-5px;
+    left:-5px;
+    filter:drop-shadow(5px 5px 0px rgba(29, 29, 29, 0.562));
+    cursor: pointer;
+    user-select: none;
+
+
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+}
 /* Current standings */
 
 .player-info{
@@ -194,6 +284,11 @@ input{
     margin:5px;
     position:relative;
     border:4px solid transparent;
+
+    /* display:grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap:10px; */
 }
 
 .player-info h2{
@@ -202,6 +297,10 @@ input{
 
 .marker-card-div{
     position:relative;
+    width : 100%;
+    display:inline-block;
+    height :auto;
+    min-height :  100%;
 }
 
 .marker-card{
@@ -210,3 +309,31 @@ input{
     width:15%;
     filter:drop-shadow(0px 0px 5px rgba(0, 0, 0, 0.562));
 }
+
+
+
+
+
+
+/* kind of worked */
+
+/* #phase-grid{
+    display:grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap:10px;
+}
+
+.phase-pile {
+    border-radius:10px;
+    padding:10px;
+    margin:5px;
+    position:relative;
+    background-color: #f9a538;
+    border: 4px solid black;
+    display:grid;
+}
+
+.pile-cards-div{
+    display: inline-flex
+} */
