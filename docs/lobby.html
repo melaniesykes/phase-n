@@ -14,7 +14,7 @@ add AI players, start game once ready.
         <script src=constants.js></script>
 
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
         <meta name="description" content="The classic online multiplayer Uno ripoff">
 
         <meta property="og:image" content="https://melaniesykes.github.io/phase-n/assets/preview.png">
@@ -23,15 +23,11 @@ add AI players, start game once ready.
     </head>
     <body>
         <div id=container>
-            <h1>TRES</h1>
-            <h2 class=info>Waiting to start...</h2>
-            <div class=box>
-                <h2>JOIN CODE: <span id="game-id"></span></h2>
-                <div onclick="copyInvite()" style="cursor:pointer">
-                    <h2 class=info>Invite link (click to copy):</h2>
-                    <h3><a id="invite-link" target="_blank"></a></h3>
-                </div>
+            <div style="display: inline;">
+                <h1 style="display: inline-block;">TRES</h1>
+                <h2 class=info style = "display: inline-block;">Waiting to start...</h2>
             </div>
+            
             <div id=div-wrapper>
                 <div class=box>
                     <h2>CONNECTED PLAYERS</h2>
@@ -43,6 +39,13 @@ add AI players, start game once ready.
                     <button onclick="addAI()">ADD AI PLAYER</button>
                     <br>
                     <button onclick="startGame()">START GAME</button>
+                </div>
+            </div>
+            <div class=box>
+                <h3>JOIN CODE: <span id="game-id"></span></h2>
+                <div onclick="copyInvite()" id=join-link-div>
+                    <h3 style = "display: inline-block;" class=info>Invite link (click to copy):</h2>
+                    <h4 style = "display: inline-block;"><a id="invite-link" target="_blank"></a></h3>
                 </div>
             </div>
         </div>
