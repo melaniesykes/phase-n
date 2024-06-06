@@ -164,9 +164,9 @@ input{
     left:0px;
 }
 
-.hand-card:focus img{
+/* .hand-card:focus img{
     filter:drop-shadow(5px 5px 0px rgb(236, 232, 27));
-}
+} */
 
 .card img{
     width:100%;
