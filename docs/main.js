@@ -35,9 +35,9 @@ function getData(){
             else{
                 // console.log(JSON.stringify(data));
                 turn = data["turn"]; 
-                setCards(data["player_cards"]);
+                setCards(data["player_cards"], data["selected_card"]);
                 setStandings(data['public_info']);
-                setPhasePiles(data["player_piles"], data["completed"]);
+                setPhasePiles(data["player_piles"], data["completed"], data["selected_card"], data["selected_pile"]);
                 setTopcard(data["top_card"]);
                 setPlayerTurnDisplay();
             }
@@ -46,55 +46,30 @@ function getData(){
 }
 
 
-function setCards(cards){
+function setCards(cards, selected_card){
     // Clear currently displayed cards
     $("#card-grid").html("");
     // Add each card
     for (let [card_id, card_file] of Object.entries(JSON.parse(cards))) {
         let onclick = `onmousedown="selectCard('${card_id}')"`
-        let card = `<div class=hand-card ${onclick}><img src=assets/${card_file}></div>`
+        if (selected_card == card_id) {
+            selected = 'style="border:solid rgb(236, 232, 27) 3px"'
+            // selected = 'style="filter:drop-shadow(5px 5px 0px rgb(236, 232, 27))"'
+        } else {
+            // selected = 'style ="filter:drop-shadow(5px 5px 0px rgba(29, 29, 29, 0.562))"'
+            selected = ''
+        }
+        let card = `<div class=hand-card ><img src=assets/${card_file} ${selected} ${onclick}></div>`
         $("#card-grid").append(card);
     }
 }
 
-function setPhasePiles(piles, completed){
-    // Display standings (how many cards each player has)
-    $("#phase-grid").html("");
-    for (let [pile_name, pile_cards] of Object.entries(JSON.parse(piles))){
-        // console.log(completed.includes(pile_name), 'pile name', pile_name, 'cards', pile_cards, 'completed', completed)
-
-        if (completed.includes(pile_name)) {
-            color = "#66b85f";
-        } else {
-            color = "#f9a538";
-        }
-
-        let div_html = `<div class=phase-pile style="background-color:${color}">`;
-        console.log(div_html)
-
-        // let div_html = "<div class=phase-pile>";
-        div_html += `<h2 class=pile-name onmousedown="selectPile(null, '${pile_name}')">${pile_name}</h2>`;
-        div_html += "<div class=pile-cards-div>";
-        
-        for (const [card_id, card_file] of Object.entries(pile_cards)) {
-            // console.log('i', card_id, 'card', card_file)
-
-            let onclick = `onmousedown="selectCard('${card_id}')"`;
-
-            let card = `<div class=pile-card-div ${onclick}><img src=assets/${card_file} class=pile-card></div>`;
-            div_html += card;
-        }                
-        div_html += '</div></div>';
-        $("#phase-grid").append(div_html);
-    }
-}
-
 function labeledPile(pile_name, card_list, player_id) {
-    let div_html = `<div class=phase-pile  onmousedown="selectPile('${player_id}', '${pile_name}')">`;
+    let div_html = `<div class=phase-pile onmousedown="selectPile('${player_id}', '${pile_name}')">`;
     if (pile_name) {
         div_html += `<h5 class=pile-name>${pile_name}</h5>`;
     }
-    div_html += "<div class=pile-cards-div>";
+    div_html += `<div class=pile-cards-div onmousedown="selectPile('${player_id}', '${pile_name}')">`;
     // console.log('pile_name', card_id, 'card', card_file)
     for (card_file of card_list) {
         let card = `<div class=pile-card-div ><img src=assets/${card_file} class=pile-card></div>`;
@@ -114,7 +89,13 @@ function setStandings(standings){
         if (player_num == turn){
             div_html = '<div class=player-info style="background-color:#f7913e;border:4px solid black">';
         }
-        div_html += `<h2 onmousedown="selectPlayer('${player_info['id']}')">${player_info['name']} ${player_info['n_cards']}</h2>`;
+        if (player_info['n_cards'] === null) {
+            player_label = player_info['name'];
+        } else {
+            player_label = `${player_info['name']} ${player_info['n_cards']}`;
+        }
+
+        div_html += `<h2 onmousedown="selectPlayer('${player_info['id']}')">${player_label}</h2>`;
         
         div_html += "<div class=pile-grid>"
         for (let [pile_name, pile_cards] of Object.entries(player_info['piles'])){
@@ -134,7 +115,7 @@ function setStandings(standings){
         // Check if someone has won and display winner message
         if (player_info['n_cards'] == 0){
             $("#win-display").css("display","block");
-            $("#winner-name").html(`${player_info['name']} won the game!`);
+            $("#winner-name").html(`${player_info['name']} ended the round!`);
             // Stop the update interval
             clearInterval(dataInterval);
             game_over = true;
@@ -143,6 +124,46 @@ function setStandings(standings){
     }
 }
 
+function setPhasePiles(piles, completed, selected_card, selected_pile){
+    // Display standings (how many cards each player has)
+    $("#phase-grid").html("");
+    for (let [pile_name, pile_cards] of Object.entries(JSON.parse(piles))){
+        // console.log(completed.includes(pile_name), 'pile name', pile_name, 'cards', pile_cards, 'completed', completed)
+
+        if (completed.includes(pile_name)) {
+            color = "#66b85f";
+        } else {
+            color = "#f9a538";
+        }
+
+        let div_html = `<div class=phase-pile style="background-color:${color}">`;
+        console.log(div_html)
+
+        // let div_html = "<div class=phase-pile>";
+        if (selected_pile == pile_name) {
+            selected = 'style="background-color:rgb(236, 232, 27)"'
+        } else {
+            selected = ''
+        }
+        div_html += `<h2 class=pile-name onmousedown="selectPileLabel('${pile_name}')" ${selected}>${pile_name}</h2>`;
+        div_html += `<div class=pile-cards-div onmousedown="selectPile(null, '${pile_name}')">`;
+        
+        for (const [card_id, card_file] of Object.entries(pile_cards)) {
+            // console.log('i', card_id, 'card', card_file)
+
+            let onclick = `onmousedown="selectCard('${card_id}')"`;
+            if (selected_card == card_id) {
+                selected = 'style="border:solid rgb(236, 232, 27) 3px"'
+            } else {
+                selected = ''
+            }
+            let card = `<div class=pile-card-div ${onclick}><img src=assets/${card_file} ${selected} class=pile-card></div>`;
+            div_html += card;
+        }                
+        div_html += '</div></div>';
+        $("#phase-grid").append(div_html);
+    }
+}
 
 function setTopcard(card){
     // Display current top card
@@ -178,6 +199,19 @@ function selectPile(pile_owner_id, pile_name){
         pile:pile_name,
         pile_owner_id:pile_owner_id
 
+    }),getData);
+}
+
+
+function selectPileLabel(pile_name){
+    if (game_over){
+        return "game over";
+    }
+    // Send request to move card
+    $.post(SERVERURL+"selectPileLabel",JSON.stringify({
+        game:game,
+        id:id,
+        pile:pile_name,
     }),getData);
 }
 
