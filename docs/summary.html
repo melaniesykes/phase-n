@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<!--
+Waiting room. View currently joined players,
+add AI players, start game once ready.
+-->
+<html>
+    <head>
+        <title>Tres</title>
+
+        <link rel=stylesheet href=style.css>
+        <link rel=icon href=assets/logo.png>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src=constants.js></script>
+
+        <meta charset="UTF-8">
+        <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+        <meta name="description" content="The classic online multiplayer Uno ripoff">
+
+        <meta property="og:image" content="https://melaniesykes.github.io/phase-n/assets/preview.png">
+        <meta property="twitter:image" content="https://melaniesykes.github.io/phase-n/assets/preview.png">
+        <meta property="twitter:card" content="summary_large_image">
+    </head>
+    <body>
+        <div id=container>
+            <div style="display: inline;">
+                <h1 style="display: inline-block;">PHASE N</h1>
+                <h2 class=info style = "display: inline-block;">Waiting to start...</h2>
+            </div>
+            
+            <div id=div-wrapper>
+                <div class=box>
+                    <h2>PHASE PROGRESS</h2>
+                    <i>Objective: be the first one to complete the last phase</i>
+                    <div id="progress">
+                    </div>
+                </div>
+                <div class=box>
+                    <h2>EARN POINTS</h2>
+                    <form>
+                        <input type="checkbox" id="dis1" name="dis1" value="Bike">
+                        <label for="dis1"> Disadvantage 1</label><br>
+                        <input type="checkbox" id="dis2" name="dis2" value="Car">
+                        <label for="dis2"> Disadvantage 2</label><br>
+                        <input type="checkbox" id="dis3" name="dis3" value="Boat">
+                        <label for="dis3"> Disadvantage 3</label><br><br>
+                    </form>
+                    <br>
+                    <button onclick="startGame()">START NEXT ROUND</button>
+                </div>
+            </div>
+            
+        </div>
+        <script>
+            // Get query string parameters (https://stackoverflow.com/questions/901115)
+            let urlParams = new URLSearchParams(window.location.search);
+            let game = urlParams.get("game");
+            let id = urlParams.get("id");
+
+
+            /*
+            Start the game
+            */
+            function startGame(){
+                $.post(SERVERURL+"start",JSON.stringify({
+                    game:game,
+                }),getPlayers);
+            }
+
+            /*
+            This gets all names of all the players
+            currently connected to the game. It also
+            checks if the game has started yet; if it has,
+            it redirects the user to the game page.
+            */
+            function getPlayers(){
+                $.get(SERVERURL+"summary?game="+game+"&id="+id,
+                    function(data){
+
+                        progress_html = "<table><tr><td></td><td></td>";
+                        players = JSON.parse(data["players"].replace(/'/g, '"'));
+                        for (let i=0; i<players.length; i++){
+                            // add back each player
+                            progress_html += `<td>${players[i]['score']}</td>`;
+                        }
+                        progress_html += '</tr><tr><td></td><td></td>';
+                        
+                        for (let i=0; i<players.length; i++){
+                            // add back each player
+                            progress_html += `<td>${players[i]['name']}</td>`;
+                        }
+                        progress_html += '</tr>';
+
+                        // clear the current player list
+                        phases = JSON.parse(data["phases"].replace(/'/g, '"'));
+                        for (let i=phases.length; i>0; i--){
+                            progress_html += `<tr><td>Phase ${i}</td><td>${phases[i - 1]}</td>`;
+                            for (let j=0; j<players.length; j++){
+                                // add back each player
+                                if (players[j]['phase'] > i) {
+                                    progress_html += `<td style="background-color:green"></td>`;
+                                } else {
+                                    progress_html += `<td style="background-color:white"></td>`;
+                                }
+                            }
+                            progress_html += '</tr>';
+                        }
+                        progress_html += '</table>';
+                        
+                        $("#progress").html(progress_html);
+
+
+                        // check for game start
+                        if (data["start"] == "yes"){
+                            location.href = `game.html?id=${id}&game=${game}`;
+                        }
+
+                        // // check if player was kicked
+                        // if (data["kicked"] == "yes"){
+                        //     alert("You have been kicked from game "+game);
+                        //     location.href = "index.html";
+                        // }
+                    }
+                )
+            }
+
+            setInterval(getPlayers,1000);
+            getPlayers();
+
+            // Kick a player
+            function kickPlayer(num){
+                $.post(SERVERURL+"remove",JSON.stringify({
+                    game:game,
+                    num:num,
+                    id:id
+                }),function(msg){
+                    getPlayers();
+                    if (!msg.startsWith("Successfully")){
+                        alert(msg);
+                    }
+                });
+            }
+            
+            function copyInvite(){
+                navigator.clipboard.writeText("https://melaniesykes.github.io/phase-n/join.html?game="+game);
+            }
+        </script>
+    </body>
+</html>

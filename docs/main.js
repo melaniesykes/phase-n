@@ -2,23 +2,85 @@
 let urlParams = new URLSearchParams(window.location.search);
 let game = urlParams.get("game");
 let id = urlParams.get("id");
+let round_over = false;
+let game_over = false;
+let has_phase = false;
+let current_player = null;
+let has_drawn = false;
+let submit_button = `<button onmousedown="completePhase()" style="font-size:14;margin-top:5px;">COMPLETE PHASE</button>`;
 
+let player_hand;
+const completed_players = new Set();
 
-// Get player name + turn number
-let player_name, player_turn;
+function labeledPile(pile_id, pile_name) {
+    let div_html = `<div id=div${pile_id} class=phase-pile onmousedown="selectPile('${pile_id.slice(3)}')">`;
+    if (pile_name) {
+        div_html += `<h5 class=pile-name>${pile_name}</h5>`;
+    }
+    div_html += `<div id=${pile_id} class=pile-cards-div></div></div>`;
+    return div_html
+}
+
 $.get(`${SERVERURL}player_data?game=${game}&id=${id}`,
-    function(data){
-        player_name = data["name"];
-        player_turn = data["turn_number"];
+    function(data) {
+        player_hand = data[id]['hand'];
+    
+        for (let [player_id, player_info] of Object.entries(data)) {
+
+            let player_select = `onmousedown="selectPlayer('${player_id}')"`;
+            let public_pile_grid = '';
+            
+            for (let [pile_id, pile_name] of Object.entries(player_info['piles'])){
+                public_pile_grid += labeledPile('pub' + pile_id, pile_name);
+            }
+
+            let hand = labeledPile('pub' + player_info['hand'], '');               
+
+            let player_div;
+            if (player_id == id) {
+                player_div = `
+                <div id=${player_id} class=player-info>
+                    <h2>${player_info['name']}</h2>
+                    <div id=turn${player_id} class=turn></div>
+                </div>
+                `;
+            } else {
+                player_div = `
+                <div id=${player_id} class=player-info>
+                    <h2 ${player_select}>${player_info['name']}</h2>
+                    <div id=turn${player_id} class=turn></div>
+                    <div id=pubpiles${player_id} class=pile-grid>${public_pile_grid}</div>
+                    <div id=pubhand${player_id} class=pile-grid>${hand}</div>
+                </div>
+                `;
+            }
+            $("#standings").append(player_div);
+        }
+        let private_pile_grid = '';
+        for (let [pile_id, pile_name] of Object.entries(data[id]['piles'])){
+            private_pile_grid += labeledPile('pri' + pile_id, pile_name);
+        }
+        $('#phase-grid').html(private_pile_grid);
+        $(`<div id=pri${player_hand} style="text-align:center"class=box></div>`).insertAfter('#phase-grid');
+        $(`#pri${player_hand}`).attr('onmousedown', `selectPile("${data[id]['hand']}")`);
+
     }
 )
 
-let turn = 0;
-
-let game_over = false;
-
 // Get updates on data
 let dataInterval;
+
+jQuery.fn.insertIndex = function(index, element) {
+    var lastIndex = this.children().length
+    if (index < 0) {
+      index = Math.max(0, lastIndex + 1 + index);
+    }
+    this.append(element);
+    if (index < lastIndex) {
+      this.children().eq(index).before(this.children().last());
+    }
+    return this;
+}
 
 function getData(){
     $.get(`${SERVERURL}data?game=${game}&id=${id}`,
@@ -33,190 +95,252 @@ function getData(){
                 console.log("error: game not found");
             }
             else{
-                // console.log(JSON.stringify(data));
-                turn = data["turn"]; 
-                setCards(data["player_cards"], data["selected_card"]);
-                setStandings(data['public_info']);
-                setPhasePiles(data["player_piles"], data["completed"], data["selected_card"], data["selected_pile"]);
-                setTopcard(data["top_card"]);
-                setPlayerTurnDisplay();
+                for (let update of JSON.parse(data)) {
+                    let update_type = update['action'];
+                    if (update_type == 'game over') {
+                        round_over = true;
+                        game_over = true;
+
+                    } else if (update_type == 'round over') {
+                        $('.turn').html('');
+                        let reason = update['reason'];
+                        $("#win-display").css("display","block");
+                        $("#winner-name").html(reason);
+                        // Stop the update interval
+                        clearInterval(dataInterval);
+                        round_over = true;
+                        // setInterval(checkIfReturn,1000);
+
+                    } else if (update_type == 'complete phase') {
+                        let player_id = update['player'];
+                        let hand_id = update['hand'];
+
+                        if (player_id == id) {
+                            $(`#turn${current_player}`).html('discarding a card...');
+                            has_phase = null;
+                        }
+
+                        completed_players.add(player_id)
+                        let n_cards = Math.max($(`#pri${hand_id}`).children().length - 1, 0);
+                        $(`#${player_id}`).insertIndex(1, `<h2 id=ncards${hand_id}>(${n_cards})</h2>`)
+
+                    } else if (update_type == 'show pile') {
+                        let pile = update['pile'];
+                        let cards = update['cards'];
+
+                        let pile_cards = '';
+
+                        for (let public_image of JSON.parse(cards)) {
+                            pile_cards += `
+                            <div class=pile-card-div >
+                                <img class=pile-card src=assets/${public_image}.png>
+                            </div>
+                            `
+                        }
+
+                        $(`#pub${pile}`).html(pile_cards)
+                        
+                    } else if (update_type == 'has phase') {
+                        let player_id = update['player'];
+
+                        if (player_id == id) {
+                            has_phase = true;
+                            if ((current_player == id) && has_drawn) {
+                                $(`#turn${current_player}`).html(submit_button);
+                            }
+                        }
+
+                    } else if (update_type == 'unhas phase') {
+                        let player_id = update['player'];
+                        
+                        if (player_id == id) {
+                            has_phase = false;
+                            if ((current_player == id) && has_drawn) {
+                                $(`#turn${current_player}`).html('discarding a card...');
+                            }
+                        }
+
+                    } else if (update_type == 'complete pile') {
+                        let pile = update['pile'];
+                        $(`#divpri${pile}`).css('background-color', 'rgb(68 194 59)');
+                        
+                    } else if (update_type == 'uncomplete pile') {
+                        let pile = update['pile'];
+                        $(`#divpri${pile}`).css('background-color', '');
+                        
+                    } else if (update_type == 'turn') {
+                        let player_id = update['player'];
+                        current_player = player_id;
+
+                        $('.player-info').css('background-color', '').css('border', '');
+                        $(`#${player_id}`).css('background-color', '#f7913e').css('border', '4px solid black');
+                        $(`#turn${player_id}`).html('drawing a card...');
+
+                    } else if (update_type == 'select card') {
+                        if (update['player'] == id) {
+                            let pile = update['pile'];
+                            let card_index = update['card_index'];
+                            // solid rgb(236, 232, 27) 3px
+
+                            $('.hand-card').find('img').css('border', '');
+                            $('.pile-card').css('border', '');
+                            $(`#pri${pile}`).children().eq(card_index).find('img').css('border', '3px solid rgb(236, 232, 27)');
+                        }
+
+                    } else if (update_type == 'unselect card') {
+                        if (update['player'] == id) {
+                            $('.hand-card').find('img').css('border', '');
+                            $('.pile-card').css('border', '');
+                        }
+
+                    } else if (update_type == 'select pile') {
+                        if (update['player'] == id) {
+                            let pile = update['pile'];
+                            $('.phase-pile').css('border', '4px solid black');
+                            $(`#pri${player_hand}`).css('border', '4px solid black');
+                            if (pile == player_hand) {
+                                $(`#pri${pile}`).css('border', '4px solid rgb(236, 232, 27)');
+                            } else {
+                                $(`#divpri${pile}`).css('border', '4px solid rgb(236, 232, 27)');
+                            }
+
+                            $(`#divpub${pile}`).css('border', '4px solid rgb(236, 232, 27)');
+                        }
+                        
+                    } else if (update_type == 'unselect pile') {
+                        if (update['player'] == id) {
+                            $('.phase-pile').css('border', '4px solid black');
+                            $(`#pri${player_hand}`).css('border', '4px solid black');
+                        }
+
+                    } else if (update_type == 'skip') {
+                        let player_id = update['player'];
+                        let times_skipped = update['times_skipped'];
+                        $(`#turn${player_id}`).html(`SKIPPED (x${times_skipped})`);
+
+                    } else if (update_type == 'move') {
+                        let from_pile = update['from'];
+                        let from_private_index = update['from_private_index'];
+                        let to_pile = update['to'];
+                        let to_index = update['to_index'];
+                        let private_image = update['private_image'];
+                        let public_image = update['public_image'];
+                        let card_id = update['card_id'];
+
+                        if (public_image !== null) {
+                            let public_card = `
+                            <div class=pile-card-div >
+                                <img class=pile-card src=assets/${public_image}.png>
+                            </div>
+                            `
+                            $(`#pub${to_pile}`).insertIndex(to_index, public_card);
+                            
+                            /* 
+                            no need to make updates to public from pile
+                            doesn't exist if player in submittedmode
+                            moves should be hidden if player in regular mode
+                            */
+                        }
+                        
+                        $(`#pri${from_pile}`).children().eq(from_private_index).remove();
+
+                        let onclick = `onmousedown="selectCard(event, '${card_id}')"`;
+                        let private_card;
+                        if (to_pile == player_hand) {
+                            private_card = `<div class=hand-card ${onclick}><img src=assets/${private_image}.png></div>`;
+                        } else {
+                            private_card = `
+                            <div class=pile-card-div >
+                                <img class=pile-card ${onclick} src=assets/${private_image}.png>
+                            </div>`
+
+                            let n_cards = Math.max($(`#pri${from_pile}`).children().length - 1, 0);
+                            $(`#ncards${from_pile}`).html(`(${n_cards})`)
+                        }
+                        $(`#pri${to_pile}`).insertIndex(to_index, private_card);
+                        
+
+                    } else if ((update_type == 'draw') || (update_type == 'deal')) {
+                        has_drawn = (update_type == 'draw');
+                        let to_pile = update['to'];
+                        let to_private_index = update['to_private_index'];
+                        let private_image = update['private_image'];
+                        let public_image = update['public_image'];
+                        let card_id = update['card_id'];
+                        let top_card = update['top_card'];
+
+                        let public_card = `
+                        <div class=pile-card-div>
+                            <img class=pile-card src=assets/${public_image}.png>
+                        </div>
+                        `
+                        $(`#pub${to_pile}`).append(public_card);
+                        
+                        let onclick = `onmousedown="selectCard(event,'${card_id}')"`;
+                        let private_card = `<div class=hand-card ${onclick}><img src=assets/${private_image}.png></div>`;
+                        $(`#pri${to_pile}`).insertIndex(to_private_index, private_card);
+                                                
+                        $('#top-card').attr('src', `assets/${top_card}.png`);
+
+                        $('.hand-card').find('img').css('border', '');
+                        $(`#pri${to_pile}`).children().eq(to_private_index).find('img').css('border', '3px solid rgb(236, 232, 27)');
+                        
+                        if (current_player == id) {
+                            if (has_phase) {
+                                $(`#turn${current_player}`).html(submit_button);
+                            } else {
+                                $(`#turn${current_player}`).html('discarding a card...');
+                            }
+                        } else {
+                            $(`#turn${current_player}`).html('discarding a card...');
+                        }
+                        
+
+                    } else if (update_type == 'discard') {
+                        has_drawn = false;
+
+                        let from_pile_public = update['from_public'];
+                        let from_pile_private = update['from_private'];
+                        let from_public_index = update['from_public_index'];
+                        let from_private_index = update['from_private_index'];
+                        let top_card = update['top_card'];
+                        
+                        if (from_public_index !== null) {
+                            $(`#pub${from_pile_public}`).children().eq(from_public_index).remove();
+                        }
+                        $(`#pri${from_pile_private}`).children().eq(from_private_index).remove();
+                        $('#top-card').attr('src', `assets/${top_card}.png`);
+                        $(`#turn${current_player}`).html('')
+
+                        let n_cards = $(`#pri${from_pile_private}`).children().length;
+                        $(`#ncards${from_pile_private}`).html(`(${n_cards})`)
+                    }
+                }
             }
         }
     )
 }
-
-
-function setCards(cards, selected_card){
-    // Clear currently displayed cards
-    $("#card-grid").html("");
-    // Add each card
-    for (let [card_id, card_file] of Object.entries(JSON.parse(cards))) {
-        let onclick = `onmousedown="selectCard('${card_id}')"`
-        if (selected_card == card_id) {
-            selected = 'style="border:solid rgb(236, 232, 27) 3px"'
-            // selected = 'style="filter:drop-shadow(5px 5px 0px rgb(236, 232, 27))"'
-        } else {
-            // selected = 'style ="filter:drop-shadow(5px 5px 0px rgba(29, 29, 29, 0.562))"'
-            selected = ''
-        }
-        let card = `<div class=hand-card ><img src=assets/${card_file} ${selected} ${onclick}></div>`
-        $("#card-grid").append(card);
-    }
-}
-
-function labeledPile(pile_name, card_list, player_id) {
-    let div_html = `<div class=phase-pile onmousedown="selectPile('${player_id}', '${pile_name}')">`;
-    if (pile_name) {
-        div_html += `<h5 class=pile-name>${pile_name}</h5>`;
-    }
-    div_html += `<div class=pile-cards-div onmousedown="selectPile('${player_id}', '${pile_name}')">`;
-    // console.log('pile_name', card_id, 'card', card_file)
-    for (card_file of card_list) {
-        let card = `<div class=pile-card-div ><img src=assets/${card_file} class=pile-card></div>`;
-        div_html += card;
-    }
-    div_html += "</div></div>";
-    return div_html
-}
-
-function setStandings(standings){
-    // Display standings (how many cards each player has)
-    $("#standings").html("");
-
-    for (let [player_num, player_info] of Object.entries(JSON.parse(standings))) {
-
-        let div_html = "<div class=player-info>";
-        if (player_num == turn){
-            div_html = '<div class=player-info style="background-color:#f7913e;border:4px solid black">';
-        }
-        if (player_info['n_cards'] === null) {
-            player_label = player_info['name'];
-        } else {
-            player_label = `${player_info['name']} ${player_info['n_cards']}`;
-        }
-
-        div_html += `<h2 onmousedown="selectPlayer('${player_info['id']}')">${player_label}</h2>`;
-        
-        div_html += "<div class=pile-grid>"
-        for (let [pile_name, pile_cards] of Object.entries(player_info['piles'])){
-            if (pile_name != 'hand') {
-                div_html += labeledPile(pile_name, pile_cards, player_info['id']);
-            }
-        }
-        div_html += "</div>";
-
-        div_html += "<div class=pile-grid>"
-        div_html += labeledPile('', player_info['piles']['hand']);
-        div_html += "</div>";
-
-        div_html += "</div>";
-        $("#standings").append(div_html);
-
-        // Check if someone has won and display winner message
-        if (player_info['n_cards'] == 0){
-            $("#win-display").css("display","block");
-            $("#winner-name").html(`${player_info['name']} ended the round!`);
-            // Stop the update interval
-            clearInterval(dataInterval);
-            game_over = true;
-            // setInterval(checkIfReturn,1000);
-        }
-    }
-}
-
-function setPhasePiles(piles, completed, selected_card, selected_pile){
-    // Display standings (how many cards each player has)
-    $("#phase-grid").html("");
-    for (let [pile_name, pile_cards] of Object.entries(JSON.parse(piles))){
-        // console.log(completed.includes(pile_name), 'pile name', pile_name, 'cards', pile_cards, 'completed', completed)
-
-        if (completed.includes(pile_name)) {
-            color = "#66b85f";
-        } else {
-            color = "#f9a538";
-        }
-
-        let div_html = `<div class=phase-pile style="background-color:${color}">`;
-        console.log(div_html)
-
-        // let div_html = "<div class=phase-pile>";
-        if (selected_pile == pile_name) {
-            selected = 'style="background-color:rgb(236, 232, 27)"'
-        } else {
-            selected = ''
-        }
-        div_html += `<h2 class=pile-name onmousedown="selectPileLabel('${pile_name}')" ${selected}>${pile_name}</h2>`;
-        div_html += `<div class=pile-cards-div onmousedown="selectPile(null, '${pile_name}')">`;
-        
-        for (const [card_id, card_file] of Object.entries(pile_cards)) {
-            // console.log('i', card_id, 'card', card_file)
-
-            let onclick = `onmousedown="selectCard('${card_id}')"`;
-            if (selected_card == card_id) {
-                selected = 'style="border:solid rgb(236, 232, 27) 3px"'
-            } else {
-                selected = ''
-            }
-            let card = `<div class=pile-card-div ${onclick}><img src=assets/${card_file} ${selected} class=pile-card></div>`;
-            div_html += card;
-        }                
-        div_html += '</div></div>';
-        $("#phase-grid").append(div_html);
-    }
-}
-
-function setTopcard(card){
-    // Display current top card
-    document.getElementById("top-card").innerHTML = card;
-}
-
-function setPlayerTurnDisplay(){
-    if (game_over){
-        return "game over";
-    }
-    if (turn == player_turn){
-        $("#player-turn-display").css("display","block");
-    }
-    else{
-        $("#player-turn-display").css("display","none");
-    }    
-}
-
 
 dataInterval = setInterval(getData,500);
 getData();
 
 // Send move requests
 
-function selectPile(pile_owner_id, pile_name){
-    if (game_over){
+function selectPile(pile_id){
+    if (round_over){
         return "game over";
     }
     // Send request to move card
     $.post(SERVERURL+"selectPile",JSON.stringify({
         game:game,
         id:id,
-        pile:pile_name,
-        pile_owner_id:pile_owner_id
-
+        pile:pile_id
     }),getData);
 }
 
-
-function selectPileLabel(pile_name){
-    if (game_over){
-        return "game over";
-    }
-    // Send request to move card
-    $.post(SERVERURL+"selectPileLabel",JSON.stringify({
-        game:game,
-        id:id,
-        pile:pile_name,
-    }),getData);
-}
-
-function selectCard(card){
-    if (game_over){
+function selectCard(event, card){
+    event.stopPropagation();
+    if (round_over){
         return "game over";
     }
     // Send request to move card
@@ -228,7 +352,7 @@ function selectCard(card){
 }
 
 function selectDeck(){
-    if (game_over){
+    if (round_over){
         return "game over";
     }
     // Send request to move card
@@ -239,7 +363,7 @@ function selectDeck(){
 }
 
 function selectDiscard(){
-    if (game_over){
+    if (round_over){
         return "game over";
     }
     // Send request to move card
@@ -258,12 +382,20 @@ function selectPlayer(selected_player){
     }),getData);
 }
 
+function completePhase(selected_player){
+    // Send request to move card
+    $.post(SERVERURL+"completePhase",JSON.stringify({
+        game:game,
+        id:id,
+    }),getData);
+}
+
 // Return to lobby button - sends "rematch" message to server and redirects to lobby
 function returnToLobby(){
     $.post(SERVERURL+"return",JSON.stringify({
         game:game
     }),function(data){
-        location.href = `lobby.html?id=${id}&game=${game}`;
+        location.href = `summary.html?id=${id}&game=${game}`;
     });
 }
 

@@ -20,25 +20,68 @@ or join existing game.
         <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
         <meta name="description" content="The classic online multiplayer Uno ripoff">
 
-        <meta property="og:image" content="https://melaniesykes.github.io/phase-n/assets/preview.png">
+        <!-- <meta property="og:image" content="https://melaniesykes.github.io/phase-n/assets/preview.png">
         <meta property="twitter:image" content="https://melaniesykes.github.io/phase-n/assets/preview.png">
-        <meta property="twitter:card" content="summary_large_image">
+        <meta property="twitter:card" content="summary_large_image"> -->
     </head>
     <body>
         <div id=container>
-            <h1>TRES!</h1>
-            <h2 class=info>The classic online Uno ripoff</h2>
+            <h1>PHASE N!</h1>
+            <h2 class=info>Hopefully less frustrating than the Phase 10 app</h2>
             <h2><a href=rules.html>View Rules</a></h2>
             <div class=box id=div-name>
                 <h3>Please enter your name</h3>
                 <input id=player-name>
             </div>
-            <div id=div-wrapper>
+            <!-- <div id=div-wrapper>
                 <div class=box id=div-start-game>
                     <h2>NEW GAME</h2>
                     <button onclick="createGame()">CREATE</button>
                 </div>
                 <div class=box id=div-join-game>
+                    <h2>JOIN GAME</h2>
+                    <h3>Enter join code</h3>
+                    <input id=join-game>
+                    <br>
+                    <button onclick="joinGame()">JOIN</button>
+                </div>
+            </div> -->
+            <div id=div-wrapper>
+                <div class=box id=div-start-game>
+                    <h3>Phase List</h3>
+                    <!-- <input input type="text" size="32" value="set of 3, run of 4
+                    run of 7
+                    4 of one color, 4 cards under 5
+                    3 even, color run of 3" name="fee" /> -->
+                    <div id=phase-list class=input-box contenteditable=plaintext-only>set of 3, run of 4
+run of 7
+4 of one color, 4 cards under 5
+3 even, color run of 3</div>
+                    <!-- <textarea id="multiliner" name="multiliner">set of 3, run of 4
+run of 7
+4 of one color, 4 cards under 5
+3 even, color run of 3</textarea> -->
+                
+                    <!-- <form action="/action_page.php"> -->
+                        <!-- <label for="fname">First name:</label>
+                        <input type="text" id="fname" name="fname" value="John"><br><br>
+                        <label for="lname">Last name:</label>
+                        <input type="text" id="lname" name="lname" value="Doe"><br><br>
+                        <label for="cars">Choose a car:</label>
+
+                        <select name="cars" id="cars">
+                        <option value="volvo">Volvo</option>
+                        <option value="saab">Saab</option>
+                        <option value="mercedes">Mercedes</option>
+                        <option value="audi">Audi</option>
+                        </select>
+                        <input type="submit" value="Submit"> -->
+                    <!-- </form> -->
+                </div>
+                <div class=box id=div-join-game>
+                    <h2>NEW GAME</h2>
+                    <button onclick="createGame()">CREATE</button>
+                    <br>
                     <h2>JOIN GAME</h2>
                     <h3>Enter join code</h3>
                     <input id=join-game>
@@ -63,6 +106,7 @@ or join existing game.
             function createGame(){
                 $.post(SERVERURL+"create",JSON.stringify({
                     name:$("#player-name").val(),
+                    phases:$("#phase-list").html()
                 }),redirect);
             }
 

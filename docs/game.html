@@ -8,7 +8,7 @@ or join existing game.
 -->
 <html>
     <head>
-        <title>Tres</title>
+        <!-- <title>Phase N</title> -->
         <link rel=stylesheet href=style.css>
         <link rel=icon href=assets/logo.png>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -23,17 +23,12 @@ or join existing game.
         <meta property="twitter:card" content="summary_large_image">
     </head>
     <body>
-        <div id=round-container>
+        <div id=round-container style = "margin-top:10px;">
             <!--<h2 id=game-info>Player: Jieruei | Game: 44012</h2>-->
             <!-- Where the winner message is displayed -->
-            <div id=win-display class=box style="display:none">
-                <h1 id=winner-name></h1>
-                <br>
-                <button onmousedown="returnToLobby()">Play again</button>
-            </div>
             <div id=div-grid>
                 <div id=play-container style="grid-column:1 / span 2">
-                    <h2>TRES</h2>                    
+                    <!-- <h2>TRES</h2>                     -->
                     <div id=card-piles>
                         <!-- <div id=player-turn-display class=box style="display:none">
                             <h5>It's your turn!</h5>
@@ -41,15 +36,19 @@ or join existing game.
                         <!-- Button to draw card -->
                         <div class=card onmousedown="selectDeck()"><img src=assets/back.png></div>
                         <!-- Top card in discard pile -->
-                        <span id=top-card onmousedown="selectDiscard()"><img src=assets/outline.png></span>
+                        <span onmousedown="selectDiscard()"><img id=top-card src=assets/outline.png></span>
                     </div>
                     <!-- Display each of the cards that the player has -->
                     <div id=phase-grid class=pile-grid></div>
                     <!-- <div id=phase-grid style="display:flex"></div> -->
-                    <div id=card-grid  onmousedown="selectPile(null, 'hand')" class=box></div>                    
+                    <!-- <div id=card-grid class=box></div>                     -->
                 </div>
                 <div class=box id="standings-box">
-                    <!-- How many cards each player has left -->
+                    <div id=win-display class=box style="display:none">
+                        <h1 id=winner-name></h1>
+                        <br>
+                        <button onmousedown="returnToLobby()">Continue</button>
+                    </div>
                     <h2 class=info>Players</h2>
                     <div id=standings></div>
                     

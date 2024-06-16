@@ -46,6 +46,8 @@ body{
     display: inline;
 }
 
+
+
 /* #play-container{
     display: grid;
     grid-template-columns: repeat(auto-fit,minmax(300px,1fr));
@@ -123,6 +125,18 @@ button:hover{
 }
 
 input{
+    background-color: rgb(250, 248, 237);
+    border-radius:10px;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 4px solid black;
+    padding: 10px;
+    font-family: Futura, "Trebuchet MS",Arial,sans-serif;
+    font-size:20pt;
+}
+
+#phase-list {    
     background-color: rgb(250, 248, 237);
     border-radius:10px;
     display: block;
@@ -214,17 +228,19 @@ input{
 }
 
 .phase-pile {
+    max-height: 25vh;
     border-radius:10px;
     padding:10px;
     margin:5px;
     position:relative;
     border: 4px solid black;
     display:grid;
+    background-color: #f9a538;
 }
 
 .pile-cards-div{
     display: inline-flex;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .pile-card-div{
@@ -232,7 +248,8 @@ input{
 }
 
 .pile-card{
-    width:200%;
+    /* width:200%; */
+    height : 95%;
 }
 
 /* Hand */
@@ -243,13 +260,7 @@ input{
     /* width : 100%; */
 }
 
-/* #card-grid{
-    display : inline-flex;
-    overflow-x: hidden;
-} */
-
-
-#card-grid .hand-card{
+.hand-card{
     width: 8%;
     margin:2px;
     display: inline;
@@ -293,6 +304,7 @@ input{
 
 .player-info h2{
     margin:0px;
+    display: inline-block;
 }
 
 .marker-card-div{
